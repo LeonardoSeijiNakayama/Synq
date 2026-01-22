@@ -15,7 +15,13 @@ import com.badlogic.gdx.scenes.scene2d.utils.FocusListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
-import io.Prototipo.Prototipo;;import java.util.ArrayList;
+import com.badlogic.gdx.controllers.Controller;
+import com.badlogic.gdx.controllers.ControllerMapping;
+import com.badlogic.gdx.controllers.Controllers;
+
+
+import io.Prototipo.Prototipo;
+import java.util.ArrayList;
 
 public class PreferencesScreen implements Screen {
 
@@ -25,6 +31,12 @@ public class PreferencesScreen implements Screen {
     private Skin skin;
     private int currentFocusIndex = 0;
     private java.util.List<Actor> focusableWidgets;
+
+    private Controller controller;
+    private ControllerMapping mapping;
+
+    private boolean prevUp, prevDown, prevLeft, prevRight, prevConfirm, prevBack, prevFast;
+
 
     private Label titleLabel, volumeMusicLabel, volumeSoundLabel, musicOnOffLabel, soundOnOffLabel;
 
@@ -174,6 +186,8 @@ public class PreferencesScreen implements Screen {
         setupInputListeners();
         setFocusToActor(focusableWidgets.get(currentFocusIndex));
 
+        setupController();
+        resetControllerEdges();
     }
 
     private void setupInputListeners(){
@@ -282,6 +296,7 @@ public class PreferencesScreen implements Screen {
     public void render(float delta) {
         Gdx.gl.glClearColor(0f, 0f, 0f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        handleControllerUI();
         stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 30f));
         stage.draw();
     }
@@ -313,5 +328,85 @@ public class PreferencesScreen implements Screen {
         stage.dispose();
 
     }
+
+    private void setupController() {
+        if (Controllers.getControllers().size > 0) {
+            controller = Controllers.getControllers().first();
+            mapping = controller.getMapping();
+        }
+    }
+
+    private void resetControllerEdges() {
+        prevUp = prevDown = prevLeft = prevRight = prevConfirm = prevBack = prevFast = false;
+    }
+
+    private void handleControllerUI() {
+
+        if (controller == null || mapping == null) {
+            if (Controllers.getControllers().size > 0) {
+                controller = Controllers.getControllers().first();
+                mapping = controller.getMapping();
+            } else {
+                return;
+            }
+        }
+
+
+        boolean upBtn    = mapping.buttonDpadUp    != -1 && controller.getButton(mapping.buttonDpadUp);
+        boolean downBtn  = mapping.buttonDpadDown  != -1 && controller.getButton(mapping.buttonDpadDown);
+        boolean leftBtn  = mapping.buttonDpadLeft  != -1 && controller.getButton(mapping.buttonDpadLeft);
+        boolean rightBtn = mapping.buttonDpadRight != -1 && controller.getButton(mapping.buttonDpadRight);
+        boolean confirmBtn = mapping.buttonA != -1 && controller.getButton(mapping.buttonA);
+        boolean backBtn = mapping.buttonB != -1 && controller.getButton(mapping.buttonB);
+
+
+        boolean fastBtn =
+            (mapping.buttonL1 != -1 && controller.getButton(mapping.buttonL1)) ||
+                (mapping.buttonR1 != -1 && controller.getButton(mapping.buttonR1));
+
+
+        if (downBtn && !prevDown) focusNextWidget();
+        if (upBtn && !prevUp)     focusPreviousWidget();
+
+
+        Actor focused = stage.getKeyboardFocus();
+        if (focused instanceof Slider) {
+            Slider s = (Slider) focused;
+            float step = s.getStepSize() * (fastBtn ? 5f : 1f);
+
+            if (rightBtn && !prevRight) {
+                s.setValue(Math.min(s.getMaxValue(), s.getValue() + step));
+            }
+            if (leftBtn && !prevLeft) {
+                s.setValue(Math.max(s.getMinValue(), s.getValue() - step));
+            }
+        }
+
+
+        if (confirmBtn && !prevConfirm) {
+            if (focused instanceof CheckBox) {
+                CheckBox cb = (CheckBox) focused;
+                cb.setChecked(!cb.isChecked());
+                cb.fire(new ChangeListener.ChangeEvent());
+            } else if (focused instanceof Button) {
+                focused.fire(new ChangeListener.ChangeEvent());
+            }
+        }
+
+
+        if (backBtn && !prevBack) {
+            parent.changeScreen(Prototipo.MENU);
+        }
+
+
+        prevUp = upBtn;
+        prevDown = downBtn;
+        prevLeft = leftBtn;
+        prevRight = rightBtn;
+        prevConfirm = confirmBtn;
+        prevBack = backBtn;
+        prevFast = fastBtn;
+    }
+
 
 }

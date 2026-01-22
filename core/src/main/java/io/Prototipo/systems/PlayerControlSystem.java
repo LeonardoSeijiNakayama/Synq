@@ -45,8 +45,12 @@ public class PlayerControlSystem extends IteratingSystem {
 
 		boolean grounded = Math.abs(vy) < EPS_VY;
 
+        if(controller.r){
+            parent.resetWorld(parent.currentPhase);
+        }
+
 		if(controller.esc){
-			parent.resetWorld(parent.currentPhase);
+			parent.returnToMenu();
 		}
 
 		if (controller.left || controller.a) {

@@ -78,7 +78,7 @@ public class MainScreen implements Screen {
         sb.setProjectionMatrix(cam.combined);
 
         engine.addSystem(new AnimationSystem());
-        engine.addSystem(renderingSystem); 
+        engine.addSystem(renderingSystem);
         engine.addSystem(new PhysicsSystem(world));
         //engine.addSystem(new PhysicsDebugSystem(world, renderingSystem.getCamera()));
         engine.addSystem(new CollisionSystem());
@@ -94,7 +94,7 @@ public class MainScreen implements Screen {
                 music.setVolume(parent.getPreferences().getMusicVolume());
                 music.play();;
             }
-            
+
         }
         // create some game objects
 
@@ -117,7 +117,7 @@ public class MainScreen implements Screen {
 
                 break;
 
-            case Prototipo.PHASE4: 
+            case Prototipo.PHASE4:
 
                 generateLevelFour();
 
@@ -152,7 +152,7 @@ public class MainScreen implements Screen {
 
         sb.setProjectionMatrix(cam.combined);
         sb.begin();
-        sb.draw(backgroundTex, x, y, vw, vh); 
+        sb.draw(backgroundTex, x, y, vw, vh);
         sb.end();
 
         PlayerComponent pco = (playerOne.getComponent(PlayerComponent.class));
@@ -191,7 +191,7 @@ public class MainScreen implements Screen {
 
     @Override
     public void dispose() {
-        sb.dispose(); 
+        sb.dispose();
     }
 
     public void resetWorld(int number) {
@@ -214,7 +214,7 @@ public class MainScreen implements Screen {
                 music.setVolume(parent.getPreferences().getMusicVolume());
                 music.play();;
             }
-          
+
         }
         switch (number) {
             case Prototipo.PHASE1:
@@ -235,13 +235,18 @@ public class MainScreen implements Screen {
 
                 break;
 
-            case Prototipo.PHASE4: 
+            case Prototipo.PHASE4:
 
                 generateLevelFour();
 
             break;
         }
 
+    }
+
+    public void returnToMenu(){
+        controller.reset();
+        parent.changeScreen(Prototipo.MENU);
     }
 
     private void applyBackground(int level) {

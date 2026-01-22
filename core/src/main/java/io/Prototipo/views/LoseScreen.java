@@ -7,6 +7,7 @@ import java.util.Random;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.controllers.Controllers;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -23,6 +24,11 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
+import com.badlogic.gdx.controllers.Controller;
+import com.badlogic.gdx.controllers.ControllerMapping;
+import com.badlogic.gdx.controllers.Controllers;
+
+
 import io.Prototipo.Prototipo;;
 
 public class LoseScreen implements Screen {
@@ -35,6 +41,13 @@ public class LoseScreen implements Screen {
     private int currentFocusIndex = 0;
 
     private String message;
+
+    private Controller controller;
+    private ControllerMapping mapping;
+
+    // estados anteriores pra detectar "apertou agora" (edge)
+    private boolean prevDpadRight, prevDpadLeft, prevConfirm, prevBack, prevStart;
+
 
     public LoseScreen(Prototipo Prototipo) {
         parent = Prototipo;
@@ -155,6 +168,8 @@ public class LoseScreen implements Screen {
             }
         });
 
+        setupController();
+
     }
 
     private void setupInputListeners(){
@@ -229,6 +244,7 @@ public class LoseScreen implements Screen {
     public void render(float delta) {
         Gdx.gl.glClearColor(0f, 0f, 0f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        handleControllerUiNavigation();
         stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 30f));
         stage.draw();
     }
@@ -280,6 +296,65 @@ public class LoseScreen implements Screen {
             case 4:
                 message = "Já pode desistir agora!";
                 break;
+        }
+    }
+
+    private void setupController() {
+        if (Controllers.getControllers().size > 0) {
+            controller = Controllers.getControllers().first();
+            mapping = controller.getMapping();
+        }
+    }
+
+    private void handleControllerUiNavigation() {
+        // se conectou depois, tenta pegar
+        if (controller == null || mapping == null) {
+            if (Controllers.getControllers().size > 0) {
+                controller = Controllers.getControllers().first();
+                mapping = controller.getMapping();
+            } else {
+                return;
+            }
+        }
+
+        boolean dpadRight = (mapping.buttonDpadRight != -1) && controller.getButton(mapping.buttonDpadRight);
+        boolean dpadLeft  = (mapping.buttonDpadLeft  != -1) && controller.getButton(mapping.buttonDpadLeft);
+        boolean confirm = (mapping.buttonA != -1) && controller.getButton(mapping.buttonA);
+        boolean backBtn = (mapping.buttonB != -1) && controller.getButton(mapping.buttonB);
+        boolean startBtn = (mapping.buttonStart != -1) && controller.getButton(mapping.buttonStart);
+
+        if (dpadRight && !prevDpadRight) {
+            focusNextWidget();
+        }
+        if (dpadLeft && !prevDpadLeft) {
+            focusPreviousWidget();
+        }
+        if (confirm && !prevConfirm) {
+            activateFocusedWidget();
+        }
+        if (backBtn && !prevBack) {
+            // escolha 1: voltar pro menu
+            parent.changeScreen(Prototipo.MENU);
+            // ou escolha 2: só ativar o botão "Voltar" se estiver focado nele
+            // setFocusToActor(focusableWidgets.get(focusableWidgets.size()-1));
+            // activateFocusedWidget();
+        }
+        if (startBtn && !prevStart) {
+
+            parent.changeScreen(Prototipo.MENU);
+        }
+
+        prevDpadRight = dpadRight;
+        prevDpadLeft  = dpadLeft;
+        prevConfirm   = confirm;
+        prevBack      = backBtn;
+        prevStart     = startBtn;
+    }
+
+    private void activateFocusedWidget() {
+        Actor focused = stage.getKeyboardFocus();
+        if (focused instanceof Button) {
+            focused.fire(new ChangeListener.ChangeEvent());
         }
     }
 
